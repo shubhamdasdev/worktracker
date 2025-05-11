@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,13 +35,14 @@ object ShiftEditDestination {
     const val routeWithArgs = "$route/{$shiftIdArg}"
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftEditScreen(
     topBarTitle: String,
     navigateBack: () -> Unit,
     viewModel: ShiftEditViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
@@ -49,8 +51,6 @@ fun ShiftEditScreen(
 
     var openDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
-    val weight = 1.5f
-
     Scaffold(
         topBar = {
             ShiftTopAppBar(
@@ -58,285 +58,242 @@ fun ShiftEditScreen(
                 navigateUp = navigateBack
             )
         }
-    ) {
+    ) { paddingValues ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 15.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
-            Spacer(Modifier.padding(80.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.shift_start),
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Main content card
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
-                TextButton(
-                    onClick = {
-                        val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerStart()
-                        val listener = OnDateSetListener { _, year, month, dayOfMonth ->
-                            viewModel.updateStartDate(year, month, dayOfMonth)
-                            viewModel.updateEndDate(year, month, dayOfMonth)
-                            viewModel.updateTotal()
-                        }
-                        DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
-                    },
-                    modifier = Modifier.weight(weight)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = uiState.startDate,
-                        fontSize = 15.sp,
-                        modifier = Modifier.testTag("startDate")
-                    )
-                }
-                TextButton(
-                    onClick = {
-                        val time = getHourAndMinute(uiState.startTime)
-                        TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                viewModel.updateStartTime(hour, minute)
+                    // Shift start section
+                    ShiftTimeSection(
+                        label = stringResource(R.string.shift_start),
+                        date = uiState.startDate,
+                        time = uiState.startTime,
+                        onDateClick = {
+                            val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerStart()
+                            val listener = OnDateSetListener { _, year, month, dayOfMonth ->
+                                viewModel.updateStartDate(year, month, dayOfMonth)
+                                viewModel.updateEndDate(year, month, dayOfMonth)
                                 viewModel.updateTotal()
-                            },
-                            time.first, time.second, false
-                        ).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = uiState.startTime,
-                            fontSize = 15.sp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("startTime"),
-                            textAlign = TextAlign.Center
-
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_start_time)
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.shift_end),
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                TextButton(
-                    onClick = {
-                        val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerEnd()
-                        val listener = OnDateSetListener { _, year, month, dayOfMonth ->
-                            viewModel.updateEndDate(year, month, dayOfMonth)
-                            viewModel.updateTotal()
-                        }
-                        DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Text(
-                        text = uiState.endDate,
-                        fontSize = 15.sp,
-                        modifier = Modifier.testTag("endDate")
+                            }
+                            DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
+                        },
+                        onTimeClick = {
+                            val time = getHourAndMinute(uiState.startTime)
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    viewModel.updateStartTime(hour, minute)
+                                    viewModel.updateTotal()
+                                },
+                                time.first, time.second, false
+                            ).show()
+                        },
+                        dateTestTag = "startDate",
+                        timeTestTag = "startTime"
                     )
-                }
-                TextButton(
-                    onClick = {
-                        val time = getHourAndMinute(uiState.endTime)
-                        TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                viewModel.updateEndTime(hour, minute)
+                    
+                    Divider()
+                    
+                    // Shift end section
+                    ShiftTimeSection(
+                        label = stringResource(R.string.shift_end),
+                        date = uiState.endDate,
+                        time = uiState.endTime,
+                        onDateClick = {
+                            val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerEnd()
+                            val listener = OnDateSetListener { _, year, month, dayOfMonth ->
+                                viewModel.updateEndDate(year, month, dayOfMonth)
                                 viewModel.updateTotal()
-                            },
-                            time.first, time.second, false
-                        ).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = uiState.endTime,
-                            fontSize = 15.sp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("endTime"),
-                            textAlign = TextAlign.Center
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_end_time)
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.break_item),
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = uiState.breakTotal,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(weight)
-                )
-                TextButton(
-                    onClick = {
-                        openBreakDialog = true
-                        breakText = ""
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
+                            }
+                            DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
+                        },
+                        onTimeClick = {
+                            val time = getHourAndMinute(uiState.endTime)
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    viewModel.updateEndTime(hour, minute)
+                                    viewModel.updateTotal()
+                                },
+                                time.first, time.second, false
+                            ).show()
+                        },
+                        dateTestTag = "endDate",
+                        timeTestTag = "endTime"
+                    )
+                    
+                    Divider()
+                    
+                    // Break section
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween//********
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "",
-                            fontSize = 15.sp,
+                            text = stringResource(R.string.break_item),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f)
                         )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_break_time)
+                        
+                        Text(
+                            text = uiState.breakTotal,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        
+                        FilledTonalButton(
+                            onClick = {
+                                openBreakDialog = true
+                                breakText = ""
+                            },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Text(stringResource(R.string.edit))
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Shift total section
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.shift_total),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Text(
+                            text = uiState.total,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.total_item),
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = uiState.total,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(weight)
-                )
-                Spacer(modifier = Modifier.weight(weight))
             }
             
-            // Display weather information if available
-            if (uiState.hasWeatherData) {
-                Spacer(modifier = Modifier.padding(vertical = 8.dp))
-                Card(
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Action buttons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Save button
+                Button(
+                    onClick = {
+                        scope.launch {
+                            viewModel.updateShift()
+                            navigateBack()
+                        }
+                    },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        .weight(1f)
+                        .height(56.dp)
+                        .testTag("saveButton"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Weather Information",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        
-                        uiState.weatherTemp?.let {
-                            Text(
-                                text = stringResource(R.string.weather_temperature, it.toString()),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                        
-                        uiState.weatherDescription?.let {
-                            Text(
-                                text = stringResource(R.string.weather_description, it),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                        
-                        uiState.weatherLocation?.let {
-                            Text(
-                                text = stringResource(R.string.weather_location, it),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.save),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                
+                // Delete button
+                FilledTonalButton(
+                    onClick = { openDeleteDialog = true },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .testTag("deleteButton"),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete),
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
             }
-            Spacer(modifier = Modifier.padding(vertical = 40.dp))
-            val scope = rememberCoroutineScope()
-            Button(
-                onClick = {
-                    scope.launch {
-                        viewModel.updateShift()
-                        navigateBack()
-                    }
-                },
-                modifier = Modifier.width(100.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.save_button),
-                    fontSize = 15.sp
-                )
-            }
-            Spacer(modifier = Modifier.padding(vertical = 10.dp))
-            Button(
-                onClick = { openDeleteDialog = true },
-                modifier = Modifier.width(100.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.delete_button),
-                    fontSize = 15.sp
-                )
-            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Break time dialog
             if (openBreakDialog) {
                 AlertDialog(
                     onDismissRequest = { openBreakDialog = false },
                     title = {
-                        Text(text = stringResource(R.string.break_in_minutes))
+                        Text(
+                            text = stringResource(R.string.break_time),
+                            style = MaterialTheme.typography.headlineSmall
+                        )
                     },
                     text = {
-                        TextField(
-                            value = breakText,
-                            onValueChange = { newText ->
-                                breakText = newText.filter { it.isDigit() }
-                            },
-                            placeholder = { Text(stringResource(R.string.set_break_time)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
+                        Column {
+                            OutlinedTextField(
+                                value = breakText,
+                                onValueChange = { breakText = it },
+                                label = { Text(stringResource(R.string.minutes)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("breakTimeInput")
+                            )
+                        }
                     },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                openBreakDialog = false
                                 viewModel.updateBreakTotal(breakText)
                                 viewModel.updateTotal()
+                                openBreakDialog = false
                             }
                         ) {
-                            Text(stringResource(R.string.confirm))
+                            Text(stringResource(R.string.ok))
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { openBreakDialog = false }) {
+                        TextButton(
+                            onClick = { openBreakDialog = false }
+                        ) {
                             Text(stringResource(R.string.cancel))
                         }
                     }

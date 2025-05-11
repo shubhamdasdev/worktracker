@@ -3,6 +3,7 @@ package com.example.worktracker.ui
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,20 +32,19 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftScreen(
     topBarTitle: String,
     navigateBack: () -> Unit,
     viewModel: ShiftViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
     var openDialog by rememberSaveable { mutableStateOf(false) }
     var breakText by rememberSaveable { mutableStateOf("") }
-
-    val weight = 1.5f
 
     Scaffold(
         topBar = {
@@ -52,214 +53,204 @@ fun ShiftScreen(
                 navigateUp = navigateBack
             )
         }
-    ) {
+    ) { paddingValues ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 15.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
-            Spacer(Modifier.padding(80.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.shift_start),
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Main content card
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
-                TextButton(
-                    onClick = {
-                        val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerStart()
-                        val listener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Shift start section
+                    ShiftTimeSection(
+                        label = stringResource(R.string.shift_start),
+                        date = uiState.startDate,
+                        time = uiState.startTime,
+                        onDateClick = {
+                            val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerStart()
+                            val listener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
                                 viewModel.updateStartDate(year, month, dayOfMonth)
                                 viewModel.updateEndDate(year, month, dayOfMonth)
                                 viewModel.updateTotal()
                             }
-                        DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Text(
-                        text = uiState.startDate,
-                        fontSize = 15.sp,
-                        modifier = Modifier.testTag("startDate")
+                            DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
+                        },
+                        onTimeClick = {
+                            val time = getHourAndMinute(uiState.startTime)
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    viewModel.updateStartTime(hour, minute)
+                                    viewModel.updateTotal()
+                                },
+                                time.first, time.second, false
+                            ).show()
+                        },
+                        dateTestTag = "startDate",
+                        timeTestTag = "startTime"
                     )
-                }
-                TextButton(
-                    onClick = {
-                        val time = getHourAndMinute(uiState.startTime)
-                        TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                viewModel.updateStartTime(hour, minute)
-                                viewModel.updateTotal()
-                            },
-                            time.first, time.second, false
-                        ).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = uiState.startTime,
-                            fontSize = 15.sp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("startTime"),
-                            textAlign = TextAlign.Center
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_start_time)
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.shift_end),
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                TextButton(
-                    onClick = {
-                        val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerEnd()
-                        val listener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+                    
+                    Divider()
+                    
+                    // Shift end section
+                    ShiftTimeSection(
+                        label = stringResource(R.string.shift_end),
+                        date = uiState.endDate,
+                        time = uiState.endTime,
+                        onDateClick = {
+                            val (cYear, cMonth, cDayOfMonth) = viewModel.getDatePickerEnd()
+                            val listener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
                                 viewModel.updateEndDate(year, month, dayOfMonth)
                                 viewModel.updateTotal()
                             }
-                        DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Text(
-                        text = uiState.endDate,
-                        fontSize = 15.sp,
-                        modifier = Modifier.testTag("endDate")
+                            DatePickerDialog(context, listener, cYear, cMonth, cDayOfMonth).show()
+                        },
+                        onTimeClick = {
+                            val time = getHourAndMinute(uiState.endTime)
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    viewModel.updateEndTime(hour, minute)
+                                    viewModel.updateTotal()
+                                },
+                                time.first, time.second, false
+                            ).show()
+                        },
+                        dateTestTag = "endDate",
+                        timeTestTag = "endTime"
                     )
-                }
-                TextButton(
-                    onClick = {
-                        val time = getHourAndMinute(uiState.endTime)
-                        TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                viewModel.updateEndTime(hour, minute)
-                                viewModel.updateTotal()
-                            },
-                            time.first, time.second, false
-                        ).show()
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = uiState.endTime,
-                            fontSize = 15.sp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("endTime"),
-                            textAlign = TextAlign.Center
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_end_time)
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.break_item),
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = uiState.breakTotal,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(weight)
-                )
-                TextButton(
-                    onClick = {
-                        openDialog = true
-                        breakText = ""
-                    },
-                    modifier = Modifier.weight(weight)
-                ) {
+                    
+                    Divider()
+                    
+                    // Break section
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween//********
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "",
-                            fontSize = 15.sp,
+                            text = stringResource(R.string.break_item),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f)
                         )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = stringResource(R.string.select_break_time)
+                        
+                        Text(
+                            text = uiState.breakTotal,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        
+                        FilledTonalButton(
+                            onClick = {
+                                openDialog = true
+                                breakText = ""
+                            },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Text(stringResource(R.string.edit))
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Shift total section
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.shift_total),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Text(
+                            text = uiState.total,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Save button
+            Button(
+                onClick = {
+                    scope.launch {
+                        viewModel.insertShift()
+                        navigateBack()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
+                    .height(56.dp)
+                    .testTag("saveButton"),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text(
-                    text = stringResource(R.string.total_item),
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = uiState.total,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(weight)
-                )
-                Spacer(modifier = Modifier.weight(weight))
-            }
-            Spacer(modifier = Modifier.padding(vertical = 40.dp))
-            val scope = rememberCoroutineScope()
-            Button(onClick = {
-                scope.launch {
-                    viewModel.insertShift()
-                    navigateBack()
-                }
-            }) {
-                Text(
                     text = stringResource(R.string.save_button),
-                    fontSize = 15.sp
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Break time dialog
             if (openDialog) {
                 AlertDialog(
                     onDismissRequest = { openDialog = false },
                     title = {
-                        Text(text = stringResource(R.string.break_in_minutes))
+                        Text(
+                            text = stringResource(R.string.break_in_minutes),
+                            style = MaterialTheme.typography.headlineSmall
+                        )
                     },
                     text = {
-                        TextField(
-                            value = breakText,
-                            onValueChange = { newText ->
-                                breakText = newText.filter { it.isDigit() }
-                            },
-                            placeholder = { Text(stringResource(R.string.set_break_time)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
+                        Column {
+                            OutlinedTextField(
+                                value = breakText,
+                                onValueChange = { newText ->
+                                    breakText = newText.filter { it.isDigit() }
+                                },
+                                label = { Text(stringResource(R.string.minutes)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("breakTimeInput")
+                            )
+                        }
                     },
                     confirmButton = {
                         TextButton(
@@ -269,15 +260,88 @@ fun ShiftScreen(
                                 viewModel.updateTotal()
                             }
                         ) {
-                            Text(stringResource(R.string.confirm))
+                            Text(stringResource(R.string.ok))
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { openDialog = false }) {
+                        TextButton(
+                            onClick = { openDialog = false }
+                        ) {
                             Text(stringResource(R.string.cancel))
                         }
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ShiftTimeSection(
+    label: String,
+    date: String,
+    time: String,
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
+    dateTestTag: String,
+    timeTestTag: String
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Date button
+            OutlinedButton(
+                onClick = onDateClick,
+                modifier = Modifier.weight(1f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.testTag(dateTestTag)
+                )
+            }
+            
+            // Time button
+            OutlinedButton(
+                onClick = onTimeClick,
+                modifier = Modifier.weight(1f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag(timeTestTag),
+                        textAlign = TextAlign.Center
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

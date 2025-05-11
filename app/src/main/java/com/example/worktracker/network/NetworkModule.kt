@@ -8,13 +8,18 @@ import java.util.concurrent.TimeUnit
 
 object NetworkModule {
     private const val BASE_URL = "https://worldtimeapi.org/"
+    private const val TAG = "NetworkModule"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         setLevel(HttpLoggingInterceptor.Level.BODY) // Log full request/response bodies
     }
-
+    
+    // Rate limiting interceptor to handle 429 errors
+    private val rateLimitInterceptor = RateLimitInterceptor()
+    
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(rateLimitInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()

@@ -9,16 +9,29 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.PauseCircle
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,6 +44,7 @@ import com.example.worktracker.AppViewModelProvider
 import com.example.worktracker.Constants
 import com.example.worktracker.NotificationHandler
 import com.example.worktracker.R
+import com.example.worktracker.ui.theme.WorkTrackerAnimations
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,29 +99,53 @@ fun MainScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val showMenu = remember { mutableStateOf(false) }
-    Scaffold(snackbarHost = {
-        SnackbarHost(snackbarHostState) { data ->
-            Snackbar(
-                modifier = Modifier.padding(horizontal = 80.dp, vertical = 10.dp),
-                dismissAction = {
-                    IconButton(onClick = { data.dismiss() }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.dismiss_snackbar)
+    
+    // Animation for the counter
+    val counterScale by animateFloatAsState(
+        targetValue = if (uiState.clockedIn) 1.2f else 1.0f,
+        animationSpec = tween(durationMillis = 500),
+        label = "counterScale"
+    )
+    
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                ElevatedCard(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Snackbar(
+                        modifier = Modifier.padding(0.dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        dismissAction = {
+                            IconButton(onClick = { data.dismiss() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.dismiss_snackbar)
+                                )
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = data.visuals.message,
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
-            ) {
-                Text(
-                    text = data.visuals.message,
-                    style = MaterialTheme.typography.bodyLarge
-                )
             }
-        }
-    },
+        },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.main_screen_top_bar)) },
+                title = { 
+                    Text(
+                        text = stringResource(R.string.main_screen_top_bar),
+                        style = MaterialTheme.typography.titleLarge
+                    ) 
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                ),
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu.value = true }) {
@@ -139,164 +177,249 @@ fun MainScreen(
                 }
             )
         }
-    ) {
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom
         ) {
-            AnimatedVisibility(visible = uiState.clockedIn) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Weather widget
-                    if (uiState.weatherEnabled) {
-                        WeatherWidget(
-                            weatherEnabled = uiState.weatherEnabled,
-                            weatherState = viewModel.weatherState,
-                            onRequestPermission = { viewModel.requestWeatherPermission() },
-                            onRefreshWeather = { viewModel.refreshWeather(context) },
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
-                    Text(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        text = uiState.counter,
-                        modifier = Modifier.testTag("counter")
+            AnimatedVisibility(
+                visible = uiState.clockedIn,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+            ) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(0.9f),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                    Spacer(modifier = Modifier.padding(vertical = 30.dp))
-                    Row(
-                        modifier = Modifier.width(250.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            fontSize = 20.sp,
-                            text = stringResource(R.string.shift_start)
-                        )
-                        Text(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            text = uiState.shiftStartTime
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .width(346.dp)
-                            .padding(start = 47.dp),
-                    ) {
-                        Text(
-                            fontSize = 20.sp,
-                            text = stringResource(R.string.break_start),
-                            modifier = Modifier.weight(1f)
-                        )
-                        AnimatedVisibility(visible = uiState.onBreak) {
-                            Text(
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                text = uiState.breakStartTime
+                        // Weather widget
+                        if (uiState.weatherEnabled) {
+                            WeatherWidget(
+                                weatherEnabled = uiState.weatherEnabled,
+                                weatherState = viewModel.weatherState,
+                                onRequestPermission = { viewModel.requestWeatherPermission() },
+                                onRefreshWeather = { viewModel.refreshWeather(context) },
+                                modifier = Modifier.padding(bottom = 16.dp)
                             )
                         }
-                        val padding by animateDpAsState(if (uiState.onBreak) 0.dp else 35.dp,
-                            label = ""
+                        
+                        // Counter with animation
+                        Text(
+                            text = uiState.counter,
+                            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier
+                                .testTag("counter")
+                                .scale(counterScale)
+                                .padding(vertical = 16.dp)
                         )
-                        IconButton(
-                            onClick = {
-                                val onBreak = uiState.onBreak
-                                viewModel.updateOnBreak()
-                                if (!onBreak) {
-                                    NotificationHandler.fireBreakNotification(context)
-                                } else {
-                                    NotificationHandler.fireNotification(context)
-                                }
-                            },
-                            modifier = Modifier.padding(end = padding)
+                        
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        
+                        // Shift info section
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start
                         ) {
-                            Icon(
-                                imageVector = if (uiState.onBreak) Icons.Default.Close else Icons.Default.PlayArrow,
-                                contentDescription = stringResource(R.string.break_start)
+                            InfoRow(
+                                label = stringResource(R.string.shift_start),
+                                value = uiState.shiftStartTime
+                            )
+                            
+                            // Break start time (only shown when on break)
+                            AnimatedVisibility(
+                                visible = uiState.onBreak,
+                                enter = expandVertically() + fadeIn(),
+                                exit = slideOutVertically() + fadeOut()
+                            ) {
+                                InfoRow(
+                                    label = stringResource(R.string.break_start),
+                                    value = uiState.breakStartTime
+                                )
+                            }
+                            
+                            // Break total
+                            InfoRow(
+                                label = stringResource(R.string.break_total),
+                                value = uiState.breakTotal
                             )
                         }
                     }
-
-                    Row(
-                        modifier = Modifier.width(250.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f, fill = !uiState.clockedIn))
+            
+            // Action buttons
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                if (!uiState.clockedIn) {
+                    // Clock in button
+                    FilledTonalButton(
+                        onClick = { viewModel.clockIn(context) },
+                        modifier = Modifier
+                            .height(56.dp)
+                            .fillMaxWidth()
+                            .testTag("clockInButton"),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     ) {
-                        Text(
-                            fontSize = 20.sp,
-                            text = stringResource(R.string.break_total)
+                        Icon(
+                            imageVector = Icons.Outlined.PlayCircle,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                         Text(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            text = uiState.breakCounter,
-                            modifier = Modifier.testTag("breakCounter")
+                            text = stringResource(R.string.clock_in),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                } else {
+                    // Clock out button
+                    FilledTonalButton(
+                        onClick = {
+                            viewModel.clockOut(context)
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    SnackbarVisualsImpl(message = context.getString(R.string.shift_saved))
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .testTag("clockOutButton"),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Text(stringResource(R.string.clock_out))
+                    }
+                    
+                    // Break button
+                    FilledTonalButton(
+                        onClick = {
+                            if (!uiState.onBreak) {
+                                viewModel.startBreak(context)
+                            } else {
+                                viewModel.endBreak(context)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .testTag("breakButton"),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (!uiState.onBreak) 
+                                MaterialTheme.colorScheme.secondaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = if (!uiState.onBreak) 
+                                MaterialTheme.colorScheme.onSecondaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (!uiState.onBreak) 
+                                Icons.Outlined.PauseCircle 
+                            else 
+                                Icons.Outlined.PlayCircle,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = if (!uiState.onBreak) 
+                                stringResource(R.string.break_start) 
+                            else 
+                                stringResource(R.string.break_end),
+                            style = MaterialTheme.typography.labelLarge
                         )
                     }
                 }
             }
-            val p = 40.dp
-            Spacer(Modifier.padding(p))
-            Divider(Modifier.fillMaxWidth(0.85f), thickness = 3.dp)
-            Spacer(Modifier.padding(p))
-            Button(
-                onClick = {
-                    val clockedIn = uiState.clockedIn
-                    viewModel.updateClockedIn()
-                    if (!clockedIn) {
-                        NotificationHandler.startRecurringNotification(context)
-                    } else {
-                        NotificationHandler.endRecurringNotification(context)
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                SnackbarVisualsImpl(context.getString(R.string.shift_saved))
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier.width(140.dp)
-            ) {
-                Text(
-                    text = if (!uiState.clockedIn)
-                        stringResource(R.string.clock_in)
-                    else stringResource(R.string.clock_out),
-                    fontSize = 15.sp
-                )
-            }
-            Spacer(Modifier.padding(20.dp))
-            Button(
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // View shifts button
+            ElevatedButton(
                 onClick = viewShiftsOnClick,
-                modifier = Modifier.width(140.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(56.dp)
+                    .testTag("viewShiftsButton"),
+                colors = ButtonDefaults.elevatedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
                 Text(
                     text = stringResource(R.string.view_shifts),
-                    fontSize = 15.sp
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
-            Spacer(Modifier.padding(p))
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun CheckPermissions(context: Context) {
-    val sharedPref = context.getSharedPreferences(Constants.PREFS_FILE_NAME, Context.MODE_PRIVATE)
-    if (!sharedPref.getBoolean(Constants.CHECKED_FOR_PERMISSIONS_KEY, false)) {
-        val launcher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) {
-            sharedPref.edit().putBoolean(Constants.CHECKED_FOR_PERMISSIONS_KEY, true).apply()
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            NotificationHandler.createNotificationChannel(context)
         }
-
-        SideEffect {
-            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+    }
+    LaunchedEffect(key1 = true) {
+        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }

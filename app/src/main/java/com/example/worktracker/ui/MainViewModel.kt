@@ -1,5 +1,6 @@
 package com.example.worktracker.ui
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -304,5 +305,33 @@ class MainViewModel(
      */
     fun requestWeatherPermission() {
         _weatherState.value = WeatherState.PermissionRequired
+    }
+    
+    /**
+     * Clock in the user
+     */
+    fun clockIn(context: Context) {
+        updateClockedIn()
+    }
+    
+    /**
+     * Clock out the user
+     */
+    fun clockOut(context: Context) {
+        updateClockedIn()
+    }
+    
+    /**
+     * Start a break
+     */
+    fun startBreak(context: Context) {
+        updateOnBreak()
+    }
+    
+    /**
+     * End a break
+     */
+    fun endBreak(context: Context) {
+        updateOnBreak()
     }
 }
