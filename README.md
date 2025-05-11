@@ -85,8 +85,14 @@ Added a new weather widget that enhances the work tracking experience:
 
 ## Screenshots
 
-<img src="media/light-clock.png" style="height: 445px; width:250px;"/> <img src="media/light-shifts.png" style="height: 445px; width:250px;"/> <img src="media/light-new-shift.png" style="height: 445px; width:250px;"/>
-<img src="media/dark-clock.png" style="height: 445px; width:250px;"/> <img src="media/dark-shifts.png" style="height: 445px; width:250px;"/> <img src="media/dark-new-shift.png" style="height: 445px; width:250px;"/>
+### Material 3 UI with Weather Widget
+<img src="media/Screenshot 2025-05-10 at 11.21.18 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.24 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.33 PM.png" style="height: 445px; width:auto;"/>
+
+### Shift Management and Time Zone Features
+<img src="media/Screenshot 2025-05-10 at 11.21.39 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.54 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.22.00 PM.png" style="height: 445px; width:auto;"/>
+
+### Settings with Material 3 Components
+<img src="media/Screenshot 2025-05-10 at 11.22.12 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 10.51.10 PM.png" style="height: 445px; width:auto;"/>
 
 ## Technical Architecture
 
