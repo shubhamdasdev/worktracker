@@ -11,4 +11,9 @@ data class Shift(
     var shiftSpan: String,
     val breakTotal: String,
     val shiftTotal: String,
+    // Weather information
+    val weatherTemp: Double? = null,
+    val weatherDescription: String? = null,
+    val weatherIcon: String? = null,
+    val weatherLocation: String? = null
 )

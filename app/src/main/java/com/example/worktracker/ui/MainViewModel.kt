@@ -1,8 +1,10 @@
 package com.example.worktracker.ui
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.worktracker.Constants
 import com.example.worktracker.Constants.BREAK_START_KEY
 import com.example.worktracker.Constants.BREAK_TOTAL_KEY
 import com.example.worktracker.Constants.CLOCKED_IN_KEY
@@ -19,6 +21,8 @@ import com.example.worktracker.Utils.subtractBreakFromTotal
 import com.example.worktracker.data.SharedPreferencesRepository
 import com.example.worktracker.data.Shift
 import com.example.worktracker.data.ShiftsRepository
+import com.example.worktracker.data.WeatherRepository
+import com.example.worktracker.network.WeatherData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,18 +45,24 @@ data class MainUiState(
     val breakTotal: String,
     val counter: String,
     val breakCounter: String,
+    val weatherEnabled: Boolean = false
 )
 
 class MainViewModel(
     private val shiftsRepository: ShiftsRepository,
     private val sharedPref: SharedPreferencesRepository,
+    private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<MainUiState>
     val uiState: StateFlow<MainUiState>
+    
+    private val _weatherState = MutableStateFlow<WeatherState>(WeatherState.Loading)
+    val weatherState: StateFlow<WeatherState> = _weatherState
 
     private val selectedTimeZone: ZoneId
     private var counterJob: Job? = null
+    private var currentWeatherData: WeatherData? = null
 
     init {
         val timeZoneString = sharedPref.getString(TIME_ZONE_KEY, "Etc/UTC")
@@ -70,6 +80,7 @@ class MainViewModel(
         val breakTotal = sharedPref.getString(BREAK_TOTAL_KEY, "0:00")
         val counter = getCounter()
         val breakCounter = getBreakCounter()
+        val weatherEnabled = sharedPref.getBoolean(Constants.WEATHER_ENABLED_KEY, false)
 
         _uiState = MutableStateFlow(
             MainUiState(
@@ -79,13 +90,19 @@ class MainViewModel(
                 breakStartTime,
                 breakTotal,
                 counter,
-                breakCounter
+                breakCounter,
+                weatherEnabled
             )
         )
         uiState = _uiState.asStateFlow()
 
         if (clockedIn) {
             startCounter()
+        }
+        
+        // Initialize weather if enabled
+        if (weatherEnabled) {
+            refreshWeather()
         }
     }
 
@@ -170,11 +187,19 @@ class MainViewModel(
         val timeStart = if (startTimeStamp[11] == '0') startTimeStamp.substring(12) else startTimeStamp.substring(11)
         val timeEnd = if (endTimeStamp[11] == '0') endTimeStamp.substring(12) else endTimeStamp.substring(11)
 
+        // Include weather data if available and enabled
+        val weatherEnabled = sharedPref.getBoolean(Constants.WEATHER_ENABLED_KEY, false)
+        val weatherData = if (weatherEnabled) currentWeatherData else null
+        
         val shift = Shift(
             date = date,
             shiftSpan = "$timeStart - $timeEnd",
             breakTotal = breakTime,
-            shiftTotal = shiftTotal
+            shiftTotal = shiftTotal,
+            weatherTemp = weatherData?.temperature,
+            weatherDescription = weatherData?.description,
+            weatherIcon = weatherData?.icon,
+            weatherLocation = weatherData?.location
         )
 
         viewModelScope.launch {
@@ -228,5 +253,85 @@ class MainViewModel(
                 breakCounter = getBreakCounter()
             )
         }
+    }
+    
+    /**
+     * Refresh weather data using location
+     */
+    fun refreshWeather(context: android.content.Context? = null) {
+        if (!uiState.value.weatherEnabled) {
+            _weatherState.value = WeatherState.Loading
+            return
+        }
+        
+        viewModelScope.launch {
+            _weatherState.value = WeatherState.Loading
+            
+            // Check if we have location permission
+            context?.let {
+                val location = weatherRepository.getLastKnownLocation(it)
+                if (location == null) {
+                    _weatherState.value = WeatherState.PermissionRequired
+                    return@launch
+                }
+                
+                // Get weather data for the location
+                val result = weatherRepository.getCurrentWeather(
+                    lat = location.latitude,
+                    lon = location.longitude
+                )
+                
+                // Handle the result
+                if (result.isSuccess) {
+                    val weatherData = result.getOrNull()
+                    if (weatherData != null) {
+                        currentWeatherData = weatherData
+                        _weatherState.value = WeatherState.Success(weatherData)
+                    } else {
+                        _weatherState.value = WeatherState.Error("No weather data available")
+                    }
+                } else {
+                    val error = result.exceptionOrNull()
+                    _weatherState.value = WeatherState.Error(error?.message ?: "Unknown error")
+                }
+            } ?: run {
+                _weatherState.value = WeatherState.Error("Context not available")
+            }
+        }
+    }
+    
+    /**
+     * Request location permission for weather
+     */
+    fun requestWeatherPermission() {
+        _weatherState.value = WeatherState.PermissionRequired
+    }
+    
+    /**
+     * Clock in the user
+     */
+    fun clockIn(context: Context) {
+        updateClockedIn()
+    }
+    
+    /**
+     * Clock out the user
+     */
+    fun clockOut(context: Context) {
+        updateClockedIn()
+    }
+    
+    /**
+     * Start a break
+     */
+    fun startBreak(context: Context) {
+        updateOnBreak()
+    }
+    
+    /**
+     * End a break
+     */
+    fun endBreak(context: Context) {
+        updateOnBreak()
     }
 }

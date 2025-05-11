@@ -2,8 +2,10 @@ package com.example.worktracker.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.worktracker.Constants
 import com.example.worktracker.Constants.START_OF_WEEK_KEY
 import com.example.worktracker.Constants.TIME_ZONE_KEY
+import com.example.worktracker.TimeZoneInfo
 import com.example.worktracker.TimeZoneInfo.getTimeZoneDisplay
 import com.example.worktracker.data.SharedPreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +18,8 @@ data class SettingsUiState(
     val timeZoneDisplay: String,
     val startOfWeek: String,
     val selectedLetter: String?,
-    val touchPositionY: Float?
+    val touchPositionY: Float?,
+    val weatherEnabled: Boolean
 )
 
 class SettingsViewModel(private val sharedPref: SharedPreferencesRepository) : ViewModel() {
@@ -29,16 +32,25 @@ class SettingsViewModel(private val sharedPref: SharedPreferencesRepository) : V
     init {
         val timeZoneId = sharedPref.getString(TIME_ZONE_KEY, "Etc/UTC")
         val dayOfWeekString = sharedPref.getString(START_OF_WEEK_KEY, "SUNDAY").toProperCase()
+        val weatherEnabled = sharedPref.getBoolean(Constants.WEATHER_ENABLED_KEY, false)
 
         _uiState = MutableStateFlow(
             SettingsUiState(
                 getTimeZoneDisplay(timeZoneId),
                 dayOfWeekString,
                 null,
-                null
+                null,
+                weatherEnabled
             )
         )
         uiState = _uiState.asStateFlow()
+
+        // Load dynamic time zones
+        viewModelScope.launch {
+            TimeZoneInfo.fetchTimeZones()
+            val display = TimeZoneInfo.getTimeZoneDisplay(timeZoneId)
+            _uiState.update { it.copy(timeZoneDisplay = display) }
+        }
     }
 
     fun setTouchPositionY(value: Float?) {
@@ -86,5 +98,14 @@ class SettingsViewModel(private val sharedPref: SharedPreferencesRepository) : V
 
     private fun String.toProperCase(): String {
         return this.lowercase().replaceFirstChar { it.uppercase() }
+    }
+    
+    fun updateWeatherEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            sharedPref.putBoolean(Constants.WEATHER_ENABLED_KEY, enabled)
+            _uiState.update {
+                it.copy(weatherEnabled = enabled)
+            }
+        }
     }
 }

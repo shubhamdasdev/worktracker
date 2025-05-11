@@ -53,4 +53,29 @@
     <string name="break_column">Break</string>
     <string name="time_column">Time</string>
     <string name="create_new_shift">Create new shift</string>
+    
+    <!-- Weather feature strings -->
+    <string name="weather_settings">Weather</string>
+    <string name="enable_weather">Enable Weather</string>
+    <string name="weather_info">Shows current weather conditions on the clock screen and records weather data with your shifts</string>
+    <string name="weather_temperature">Temperature: %1$s°C</string>
+    <string name="weather_description">Weather: %1$s</string>
+    <string name="weather_location">Location: %1$s</string>
+    <string name="weather_loading">Loading weather data…</string>
+    <string name="weather_error">Unable to load weather data</string>
+    <string name="weather_permission_required">Location permission required for weather</string>
+    <string name="clockIn">Clock In</string>
+    <string name="clockOut">Clock Out</string>
+    <string name="startBreak">Start Break</string>
+    <string name="endBreak">End Break</string>
+    <string name="break_end">Break End</string>
+    <string name="shift_total">Shift Total</string>
+    <string name="edit">Edit</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="break_time">Break Time</string>
+    <string name="minutes">Minutes</string>
+    <string name="ok">OK</string>
+    <string name="retry">Retry</string>
+    <string name="grant_permission">Grant Permission</string>
 </resources>

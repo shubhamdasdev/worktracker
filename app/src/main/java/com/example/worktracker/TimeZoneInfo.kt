@@ -1,6 +1,12 @@
 package com.example.worktracker
 
 import android.util.Log
+import com.example.worktracker.network.NetworkModule
+import com.example.worktracker.network.WorldTimeApi
+import com.example.worktracker.network.WorldTimeResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.ZoneId
@@ -9,281 +15,202 @@ import java.time.zone.ZoneRulesException
 import kotlin.math.abs
 
 object TimeZoneInfo {
-    val timeZoneList: List<Triple<String, String, String>>
+    private const val TAG = "TimeZoneInfo"
+    private val api: WorldTimeApi = NetworkModule.api
+    var timeZoneList: List<Triple<String, String, String>> = emptyList()
+        private set
     val letterToIndexMap = mutableMapOf<String, Int>()
 
     fun getTimeZoneDisplay(timeZoneId: String): String {
-        return timeZoneList.find { it.first == timeZoneId }?.second!!
+        return timeZoneList.find { it.first == timeZoneId }?.second ?: timeZoneId
     }
 
+    // Fallback data in case API fails
     private val timeZoneData = listOf(
-        Pair("Africa/Abidjan","Abidjan / Côte d'Ivoire"),
-        Pair("Africa/Accra","Accra / Ghana"),
-        Pair("Africa/Addis_Ababa","Addis Ababa / Ethiopia"),
-        Pair("Australia/Adelaide","Adelaide / Australia"),
-        Pair("Asia/Aden","Aden / Yemen"),
-        Pair("US/Alaska","Alaska / USA"),
-        Pair("Africa/Algiers","Algiers / Algeria"),
-        Pair("Asia/Almaty","Almaty / Kazakhstan"),
-        Pair("Asia/Amman","Amman / Jordan"),
-        Pair("Europe/Amsterdam","Amsterdam / Netherlands"),
-        Pair("Asia/Anadyr","Anadyr / Russia"),
-        Pair("America/Anchorage","Anchorage / USA"),
-        Pair("Europe/Andorra","Andorra la Vella / Andorra"),
-        Pair("Indian/Antananarivo","Antananarivo / Madagascar"),
-        Pair("Pacific/Apia","Apia / Samoa"),
-        Pair("Asia/Ashgabat","Ashgabat / Turkmenistan"),
-        Pair("Africa/Asmara","Asmara / Eritrea"),
-        Pair("America/Asuncion","Asuncion / Paraguay"),
-        Pair("Europe/Athens","Athens / Greece"),
-        Pair("Pacific/Auckland","Auckland / New Zealand"),
-        Pair("Atlantic/Azores","Azores / Portugal"),
-        Pair("Asia/Baku","Baku / Azerbaijan"),
-        Pair("Africa/Bamako","Bamako / Mali"),
-        Pair("Asia/Bangkok","Bangkok / Thailand"),
-        Pair("Africa/Bangui","Bangui / Gambia"),
-        Pair("Asia/Beirut","Beirut / Lebanon"),
-        Pair("Europe/Belgrade","Belgrade / Serbia"),
-        Pair("America/Belize","Belize City / Belize"),
-        Pair("Europe/Berlin","Berlin / Germany"),
-        Pair("Asia/Bishkek","Bishkek / Kyrgyzstan"),
-        Pair("Africa/Bissau","Bissau / Guinea Bissau"),
-        Pair("America/Bogota","Bogota / Colombia"),
-        Pair("America/Boise","Boise / USA"),
-        Pair("Europe/Bratislava","Bratislava / Slovakia"),
-        Pair("Africa/Brazzaville","Brazzaville / Republic of the Congo"),
-        Pair("Australia/Brisbane","Brisbane / Australia"),
-        Pair("Europe/Brussels","Brussels / Belgium"),
-        Pair("Europe/Bucharest","Bucharest / Romania"),
-        Pair("Europe/Budapest","Budapest / Hungary"),
-        Pair("America/Argentina/Buenos_Aires","Buenos Aires / Argentina"),
-        Pair("Africa/Bujumbura","Bujumbura / Burundi"),
-        Pair("Africa/Cairo","Cairo / Egypt"),
-        Pair("Atlantic/Canary","Canary Islands / Spain"),
-        Pair("Australia/Canberra","Canberra / Australia"),
-        Pair("America/Cancun","Cancun / Mexico"),
-        Pair("America/Caracas","Caracas / Venezuela"),
-        Pair("Africa/Casablanca","Casablanca / Morocco"),
-        Pair("America/Cayenne","Cayenne / French Guiana"),
-        Pair("US/Central","Central / USA"),
-        Pair("Pacific/Chatham","Chatham Islands / New Zealand"),
-        Pair("America/Chicago","Chicago / USA"),
-        Pair("Europe/Chisinau","Chisinau / Moldova"),
-        Pair("Asia/Chita","Chita / Russia"),
-        Pair("Asia/Chongqing","Chongqing / China"),
-        Pair("Asia/Colombo","Colombo / Sri Lanka"),
-        Pair("Africa/Conakry","Conakry / Guinea"),
-        Pair("Europe/Copenhagen","Copenhagen / Denmark"),
-        Pair("Africa/Dakar","Dakar / Senegal"),
-        Pair("Asia/Damascus","Damascus / Syria"),
-        Pair("Africa/Dar_es_Salaam","Dar es Salaam / Tanzania"),
-        Pair("Australia/Darwin","Darwin / Australia"),
-        Pair("America/Denver","Denver / USA"),
-        Pair("America/Detroit","Detroit / USA"),
-        Pair("Asia/Dhaka","Dhaka / Bangladesh"),
-        Pair("Asia/Dili","Dili / Timor-Leste"),
-        Pair("Africa/Djibouti","Djibouti / Djibouti"),
-        Pair("Africa/Douala","Douala / Cameroon"),
-        Pair("Asia/Dubai","Dubai / UAE"),
-        Pair("Europe/Dublin","Dublin / Ireland"),
-        Pair("Asia/Dushanbe","Dushanbe / Tajikistan"),
-        Pair("Pacific/Easter","Easter Island / Chile"),
-        Pair("US/Eastern","Eastern / USA"),
-        Pair("Australia/Eucla","Eucla / Australia"),
-        Pair("Africa/Freetown","Freetown / Sierra Leone"),
-        Pair("Africa/Gaborone","Gaborone / Botswana"),
-        Pair("Pacific/Galapagos","Galapagos Islands / Ecuador"),
-        Pair("Pacific/Guam","Guam / USA"),
-        Pair("America/Guatemala","Guatemala City / Guatemala"),
-        Pair("America/Halifax","Halifax / Canada"),
-        Pair("Africa/Harare","Harare / Zimbabwe"),
-        Pair("Asia/Harbin","Harbin / China"),
-        Pair("America/Havana","Havana / Cuba"),
-        Pair("US/Hawaii","Hawaii / USA"),
-        Pair("Europe/Helsinki","Helsinki / Finland"),
-        Pair("Asia/Ho_Chi_Minh","Ho Chi Minh / Vietnam"),
-        Pair("Australia/Hobart","Hobart / Australia"),
-        Pair("Hongkong","Hong Kong / China"),
-        Pair("Pacific/Honolulu","Honolulu / USA"),
-        Pair("Asia/Hovd","Hovd / Mongolia"),
-        Pair("America/Indianapolis","Indianapolis / USA"),
-        Pair("Asia/Irkutsk","Irkutsk / Russia"),
-        Pair("Asia/Istanbul","Istanbul / Türkiye"),
-        Pair("Asia/Jakarta","Jakarta / Indonesia"),
-        Pair("Asia/Jerusalem","Jerusalem / Israel"),
-        Pair("Africa/Johannesburg","Johannesburg / South Africa"),
-        Pair("Asia/Kabul","Kabul / Afghanistan"),
-        Pair("Europe/Kaliningrad","Kaliningrad / Russia"),
-        Pair("Asia/Kamchatka","Kamchatka / Russia"),
-        Pair("Africa/Kampala","Kampala / Uganda"),
-        Pair("Asia/Karachi","Karachi / Pakistan"),
-        Pair("Asia/Kathmandu","Kathmandu / Nepal"),
-        Pair("Africa/Khartoum","Khartoum / Sudan"),
-        Pair("Africa/Kigali","Kigali / Rwanda"),
-        Pair("Africa/Kinshasa","Kinshasa / Democratic Republic of the Congo"),
-        Pair("Pacific/Kiritimati","Kiritimati / Republic of Kiribati"),
-        Pair("Asia/Kolkata","Kolkata / India"),
-        Pair("Asia/Krasnoyarsk","Krasnoyarsk / Russia"),
-        Pair("Asia/Kuala_Lumpur","Kuala Lumpur / Malaysia"),
-        Pair("Asia/Kuching","Kuching / Malaysia"),
-        Pair("Asia/Kuwait","Kuwait City / Kuwait"),
-        Pair("Europe/Kiev","Kyiv / Ukraine"),
-        Pair("America/La_Paz","La Paz / Bolivia"),
-        Pair("Africa/Lagos","Lagos / Nigeria"),
-        Pair("Africa/Libreville","Libreville / Gabon"),
-        Pair("America/Lima","Lima / Peru"),
-        Pair("Europe/Lisbon","Lisbon / Portugal"),
-        Pair("Europe/Ljubljana","Ljubljana / Slovenia"),
-        Pair("Africa/Lome","Lome / Togo"),
-        Pair("Europe/London","London / UK"),
-        Pair("Australia/Lord_Howe","Lord Howe Island / Australia"),
-        Pair("America/Los_Angeles","Los Angeles / USA"),
-        Pair("Africa/Luanda","Luanda / Angola"),
-        Pair("Africa/Lubumbashi","Lubumbashi / Democratic Republic of the Congo"),
-        Pair("Africa/Lusaka","Lusaka / Zambia"),
-        Pair("Europe/Luxembourg","Luxembourg / Luxembourg"),
-        Pair("Asia/Macau","Macau / China"),
-        Pair("Europe/Madrid","Madrid / Spain"),
-        Pair("Asia/Magadan","Magadan / Russia"),
-        Pair("Pacific/Majuro","Majuro / Marshall Islands"),
-        Pair("Asia/Makassar","Makassar / Indonesia"),
-        Pair("Africa/Malabo","Malabo / Equatorial Guinea"),
-        Pair("America/Managua","Managua / Nicaragua"),
-        Pair("Asia/Manila","Manila / Philippines"),
-        Pair("Africa/Maputo","Maputo / Mozambique"),
-        Pair("America/Marigot","Marigot / Saint Martin"),
-        Pair("Pacific/Marquesas","Marquesas Islands / French Polynesia"),
-        Pair("Africa/Maseru","Maseru / Lesotho"),
-        Pair("Indian/Mayotte","Mayotte / France"),
-        Pair("America/Mazatlan","Mazatlan / Mexico"),
-        Pair("Africa/Mbabane","Mbabane / Eswatini"),
-        Pair("Australia/Melbourne","Melbourne / Australia"),
-        Pair("America/Mexico_City","Mexico City / Mexico"),
-        Pair("Pacific/Midway","Midway / USA"),
-        Pair("Europe/Minsk","Minsk / Belarus"),
-        Pair("Africa/Mogadishu","Mogadishu / Somalia"),
-        Pair("Europe/Monaco","Monaco / Monaco"),
-        Pair("Africa/Monrovia","Monrovia / Liberia"),
-        Pair("America/Montevideo","Montevideo / Uruguay"),
-        Pair("America/Montreal","Montreal / Canada"),
-        Pair("Europe/Moscow","Moscow / Russia"),
-        Pair("US/Mountain","Mountain / USA"),
-        Pair("Asia/Muscat","Muscat / Oman"),
-        Pair("Africa/Ndjamena","N'djamena / Chad"),
-        Pair("Africa/Nairobi","Nairobi / Kenya"),
-        Pair("America/Nassau","Nassau / Bahamas"),
         Pair("America/New_York","New York / USA"),
-        Pair("Canada/Newfoundland","Newfoundland / Canada"),
-        Pair("Africa/Niamey","Niamey / Niger"),
-        Pair("Asia/Nicosia","Nicosia / Cyprus"),
-        Pair("Africa/Nouakchott","Nouakchott / Mauritania"),
-        Pair("Pacific/Noumea","Noumea / New Caledonia"),
-        Pair("Asia/Novokuznetsk","Novokuznetsk / Russia"),
-        Pair("Asia/Novosibirsk","Novosibirsk / Russia"),
-        Pair("America/Nuuk","Nuuk / Greenland"),
-        Pair("Asia/Omsk","Omsk / Russia"),
-        Pair("Europe/Oslo","Oslo / Norway"),
-        Pair("Africa/Ouagadougou","Ouagadougou / Burkina Faso"),
-        Pair("Pacific/Pago_Pago","Pago Pago / America Samoa"),
-        Pair("US/Pacific","Pacific / USA"),
-        Pair("America/Panama","Panama City / Panama"),
-        Pair("America/Paramaribo","Paramaribo / Suriname"),
+        Pair("America/Los_Angeles","Los Angeles / USA"),
+        Pair("America/Chicago","Chicago / USA"),
+        Pair("Europe/London","London / UK"),
         Pair("Europe/Paris","Paris / France"),
-        Pair("Australia/Perth","Perth / Australia"),
-        Pair("Asia/Phnom_Penh","Phnom Penh / Cambodia"),
-        Pair("America/Phoenix","Phoenix / USA"),
-        Pair("Europe/Podgorica","Podgorica / Montenegro"),
-        Pair("Pacific/Port_Moresby","Port Moresby / Papua New Guniea"),
-        Pair("America/Port_of_Spain","Port of Spain / Trinidad and Tobago"),
-        Pair("America/Port-au-Prince","Port-au-Prince / Haiti"),
-        Pair("Africa/Porto-Novo","Porto-Novo / Benin"),
-        Pair("Europe/Prague","Prague / Czech Republic"),
-        Pair("Atlantic/Cape_Verde","Praia / Cabo Verde"),
-        Pair("Asia/Pyongyang","Pyongyang / North Korea"),
-        Pair("America/Recife","Recife / Brazil"),
-        Pair("America/Regina","Regina / Canada"),
-        Pair("Atlantic/Reykjavik","Reykjavik / Iceland"),
-        Pair("Europe/Riga","Riga / Latvia"),
-        Pair("Asia/Riyadh","Riyadh / Saudi Arabia"),
+        Pair("Europe/Berlin","Berlin / Germany"),
         Pair("Europe/Rome","Rome / Italy"),
-        Pair("Pacific/Saipan","Saipan / Saipan"),
-        Pair("Europe/Samara","Samara / Russia"),
-        Pair("Europe/San_Marino","San Marino / San Marino"),
-        Pair("America/El_Salvador","San Salvador / El Salvador"),
-        Pair("America/Santiago","Santiago / Chile"),
-        Pair("America/Santo_Domingo","Santo Domingo / Dominican Republic"),
-        Pair("America/Sao_Paulo","Sao Paulo / Brazil"),
-        Pair("Africa/Sao_Tome","Sao Tome / Sao Time and Principe"),
-        Pair("Europe/Sarajevo","Sarajevo / Bosnia and Herzegovina"),
-        Pair("Asia/Seoul","Seoul / South Korea"),
-        Pair("Asia/Shanghai","Shanghai / China"),
-        Pair("Asia/Singapore","Singapore / Republic of Singapore"),
-        Pair("Europe/Skopje","Skopje / Macedonia"),
-        Pair("Europe/Sofia","Sofia / Bulgaria"),
-        Pair("Asia/Srednekolymsk","Srednekolymsk / Russia"),
-        Pair("Atlantic/Stanley","Stanley / Falkland Islands"),
-        Pair("Europe/Stockholm","Stockholm / Sweden"),
-        Pair("Australia/Sydney","Sydney / Australia"),
-        Pair("Pacific/Tahiti","Tahiti / French Polynesia"),
-        Pair("Asia/Taipei","Taipei City / Taiwan"),
-        Pair("Europe/Tallinn","Tallinn / Estonia"),
-        Pair("Pacific/Tarawa","Tarawa / Kiribati"),
-        Pair("Asia/Tashkent","Tashkent / Uzbekistan"),
-        Pair("Asia/Tbilisi","Tbilisi / Georgia"),
-        Pair("America/Tegucigalpa","Tegucigalpa / Honduras"),
-        Pair("Asia/Tehran","Tehran / Iran"),
-        Pair("Asia/Tel_Aviv","Tel Aviv / Israel"),
-        Pair("Asia/Thimphu","Thimphu / Bhutan"),
-        Pair("America/Tijuana","Tijuana / Mexico"),
-        Pair("Europe/Tirane","Tirana / Albania"),
+        Pair("Europe/Madrid","Madrid / Spain"),
         Pair("Asia/Tokyo","Tokyo / Japan"),
+        Pair("Asia/Shanghai","Shanghai / China"),
+        Pair("Asia/Singapore","Singapore"),
+        Pair("Asia/Dubai","Dubai / UAE"),
+        Pair("Australia/Sydney","Sydney / Australia"),
+        Pair("Australia/Melbourne","Melbourne / Australia"),
+        Pair("Africa/Johannesburg","Johannesburg / South Africa"),
+        Pair("Africa/Cairo","Cairo / Egypt"),
+        Pair("America/Sao_Paulo","Sao Paulo / Brazil"),
+        Pair("America/Mexico_City","Mexico City / Mexico"),
         Pair("America/Toronto","Toronto / Canada"),
-        Pair("Africa/Tripoli","Tripoli / Libya"),
-        Pair("Asia/Ulan_Bator","Ulaanbaatar / Mongolia"),
-        Pair("Asia/Urumqi","Urumqi / China"),
-        Pair("Etc/UTC","UTC (Coordinated Universal Time)"),
-        Pair("Europe/Vaduz","Vaduz / Liechtenstein"),
-        Pair("America/Vancouver","Vancouver / Canada"),
-        Pair("Australia/Victoria","Victoria / Seychelles"),
-        Pair("Europe/Vienna","Vienna / Austria"),
-        Pair("Asia/Vientiane","Vientiane / Laos"),
-        Pair("Europe/Vilnius","Vilnius / Lithuania"),
-        Pair("Asia/Vladivostok","Vladivostok / Russia"),
-        Pair("Europe/Volgograd","Volgograd / Russia"),
-        Pair("Europe/Warsaw","Warsaw / Poland"),
-        Pair("Africa/Windhoek","Windhoek / Namibia"),
-        Pair("America/Winnipeg","Winnipeg / Canada"),
-        Pair("Asia/Yakutsk","Yakutsk / Russia"),
-        Pair("Asia/Yangon","Yangon / Myanmar"),
-        Pair("Asia/Yekaterinburg","Yekaterinburg / Russia"),
-        Pair("Asia/Yerevan","Yerevan / Armenia"),
-        Pair("Europe/Zagreb","Zagreb / Croatia"),
-        Pair("Europe/Zurich","Zurich / Switzerland"),
+        Pair("Pacific/Auckland","Auckland / New Zealand"),
+        Pair("Etc/UTC","UTC (Coordinated Universal Time)")
     )
-    init {
-        val tempList = mutableListOf<Triple<String, String, String>>()
-        val instant = Instant.now()
-        timeZoneData.forEach {
-            try {
-                val zoneId = ZoneId.of(it.first)
-                val offset = zoneId.rules.getOffset(instant).formatOffset()
-                tempList.add(Triple(it.first, it.second, offset))
-            } catch (e: DateTimeException) {
-                Log.e(TAG, "An error occurred: ", e)
-            } catch (e: ZoneRulesException) {
-                Log.e(TAG, "An error occurred: ", e)
-            }
-        }
-        timeZoneList = tempList
 
+    // Initialize with fallback data and ensure alphabet map is populated
+    init {
+        // Initialize the letter map with the full alphabet
+        // This ensures the alphabet sidebar is always displayed
+        ('A'..'Z').forEachIndexed { index, char -> 
+            letterToIndexMap[char.toString()] = index
+        }
+        
+        // Then initialize the fallback data
+        initializeFallbackData()
+    }
+    
+    private fun initializeFallbackData() {
+        // Only initialize if the list is empty to avoid overwriting existing data
+        if (timeZoneList.isEmpty()) {
+            Log.d(TAG, "Initializing fallback timezone data")
+            val tempList = mutableListOf<Triple<String, String, String>>()
+            val instant = Instant.now()
+            timeZoneData.forEach {
+                try {
+                    val zoneId = ZoneId.of(it.first)
+                    val offset = zoneId.rules.getOffset(instant).formatOffset()
+                    tempList.add(Triple(it.first, it.second, offset))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error with fallback zone ${it.first}", e)
+                }
+            }
+            timeZoneList = tempList.sortedBy { it.second }
+            
+            // Build the letter index map
+            updateLetterIndexMap()
+            
+            Log.d(TAG, "Fallback data initialized with ${timeZoneList.size} timezones")
+        } else {
+            Log.d(TAG, "Using existing timezone data (${timeZoneList.size} zones)")
+        }
+    }
+    
+    private fun updateLetterIndexMap() {
+        letterToIndexMap.clear()
         timeZoneList.forEachIndexed { index, timeZone ->
-            val startingLetter = timeZone.second.first().toString()
+            val startingLetter = timeZone.second.firstOrNull()?.toString()?.uppercase() ?: ""
             if (startingLetter !in letterToIndexMap) {
                 letterToIndexMap[startingLetter] = index
             }
         }
     }
 
+    /**
+     * Fetches time zones and their offsets from WorldTimeAPI, populates list and index map.
+     * Handles rate limiting gracefully by using fallback data when needed.
+     */
+    suspend fun fetchTimeZones() {
+        withContext(Dispatchers.IO) {
+            try {
+                // First try to get the list of all zones
+                Log.d(TAG, "Attempting to fetch timezone list from API")
+                val zones = api.listZones()
+                
+                // Then fetch details for each zone
+                val newTimeZones = fetchZoneDetails(zones)
+                
+                // Update the data if we got anything
+                if (newTimeZones.isNotEmpty()) {
+                    Log.d(TAG, "Successfully fetched ${newTimeZones.size} timezones from API")
+                    updateTimeZoneData(newTimeZones)
+                } else {
+                    Log.w(TAG, "API returned empty timezone list, using fallback data")
+                    // Ensure fallback data is used
+                    initializeFallbackData()
+                }
+            } catch (e: retrofit2.HttpException) {
+                when (e.code()) {
+                    429 -> {
+                        Log.w(TAG, "API rate limit exceeded (HTTP 429). Using fallback data", e)
+                        // Make sure we have fallback data loaded
+                        initializeFallbackData()
+                    }
+                    else -> {
+                        Log.e(TAG, "HTTP error ${e.code()} fetching timezones. Using fallback data", e)
+                        initializeFallbackData()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching timezones. Using fallback data", e)
+                // Make sure we have fallback data loaded
+                initializeFallbackData()
+            }
+        }
+    }
+    
+    // Cache to store timezone data between app sessions
+    private var lastFetchTime: Long = 0
+    private val CACHE_DURATION_MS = 24 * 60 * 60 * 1000L // 24 hours
+    
+    /**
+     * Fetches timezone details in batches to avoid overwhelming the API
+     * and triggering rate limits.
+     */
+    private suspend fun fetchZoneDetails(zones: List<String>): List<Triple<String, String, String>> {
+        val result = mutableListOf<Triple<String, String, String>>()
+        
+        // Check if we need to fetch at all (use cache if available and recent)
+        val currentTime = System.currentTimeMillis()
+        if (timeZoneList.isNotEmpty() && currentTime - lastFetchTime < CACHE_DURATION_MS) {
+            Log.d(TAG, "Using cached timezone data (${timeZoneList.size} zones)")
+            return timeZoneList
+        }
+        
+        // Process a limited number of important zones to avoid rate limiting
+        val priorityZones = listOf(
+            "America/New_York", "America/Los_Angeles", "America/Chicago", 
+            "Europe/London", "Europe/Paris", "Asia/Tokyo", "Australia/Sydney", 
+            "Etc/UTC"
+        )
+        
+        // Only fetch the priority zones to avoid rate limiting
+        val zonesToFetch = zones.filter { it in priorityZones }
+        Log.d(TAG, "Fetching ${zonesToFetch.size} priority timezones instead of all ${zones.size} zones")
+        
+        // Process in small batches with delay between batches
+        val batchSize = 2
+        zonesToFetch.chunked(batchSize).forEach { batch ->
+            batch.forEach { id ->
+                try {
+                    val resp: WorldTimeResponse = api.zoneInfo(id)
+                    result.add(Triple(id, resp.timezone, resp.utc_offset))
+                    Log.d(TAG, "Successfully fetched timezone: ${resp.timezone}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching zone $id", e)
+                }
+            }
+            // Add a delay between batches to avoid rate limiting
+            delay(1000) // 1 second delay between batches
+        }
+        
+        // Update last fetch time
+        if (result.isNotEmpty()) {
+            lastFetchTime = currentTime
+        }
+        
+        return result
+    }
+    
+    private fun updateTimeZoneData(newZones: List<Triple<String, String, String>>) {
+        // Only update if we got data
+        if (newZones.isEmpty()) return
+        
+        // Update the list
+        timeZoneList = newZones
+        
+        // Rebuild the index map
+        letterToIndexMap.clear()
+        for ((index, tz) in timeZoneList.withIndex()) {
+            val letter = tz.second.firstOrNull()?.toString() ?: ""
+            if (!letterToIndexMap.containsKey(letter)) {
+                letterToIndexMap[letter] = index
+            }
+        }
+    }
+    
     private fun ZoneOffset.formatOffset(): String {
         val totalMinutes = this.totalSeconds / 60
         val hours = totalMinutes / 60
@@ -295,6 +222,4 @@ object TimeZoneInfo {
             else -> String.format("GMT%+d:%02d", hours, minutes)
         }
     }
-
 }
-

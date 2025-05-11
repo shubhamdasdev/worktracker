@@ -1,15 +1,20 @@
 package com.example.worktracker.ui
 
-
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.worktracker.R
+import com.example.worktracker.ui.theme.WorkTrackerAnimations
 
 enum class Screen {
     MainScreen,
@@ -25,7 +30,11 @@ fun WorkNavGraph(modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         startDestination = Screen.MainScreen.name,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = WorkTrackerAnimations.enterTransition,
+        exitTransition = WorkTrackerAnimations.exitTransition,
+        popEnterTransition = WorkTrackerAnimations.popEnterTransition,
+        popExitTransition = WorkTrackerAnimations.popExitTransition
     ) {
         composable(route = Screen.MainScreen.name) {
             MainScreen(

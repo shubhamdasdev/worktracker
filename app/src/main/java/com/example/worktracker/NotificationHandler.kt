@@ -121,4 +121,16 @@ object NotificationHandler {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(Constants.NOTIFICATION_ID)
     }
+    
+    fun createNotificationChannel(context: Context) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = context.getString(R.string.channel_id)
+        val channelName = context.getString(R.string.worktracker_notification_name)
+        val channel = android.app.NotificationChannel(
+            channelId,
+            channelName,
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        notificationManager.createNotificationChannel(channel)
+    }
 }

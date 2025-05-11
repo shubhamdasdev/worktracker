@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,10 +26,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.worktracker.AppViewModelProvider
 import com.example.worktracker.R
 import com.example.worktracker.data.Shift
+import com.example.worktracker.ui.theme.WorkTrackerAnimations
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogScreen(
     navigateBack: () -> Unit,
@@ -55,108 +58,170 @@ fun LogScreen(
             )
         },
         bottomBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.secondary)) {
-                Divider()
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.height(50.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.total_item),
-                        textAlign = TextAlign.Right,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(2f),
-                        fontSize = 18.sp
-
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = total,
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                        fontSize = 18.sp
-                    )
-                }
-                Surface(
-                    shape = RoundedCornerShape(50.dp),
-                    modifier = Modifier.padding(horizontal = 5.dp),
-                    color = MaterialTheme.colorScheme.tertiary
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp,
+                shadowElevation = 8.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Total row with card
+                    ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(IntrinsicSize.Min)
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
                     ) {
-                        Button(
-                            onClick = { viewModel.minusDate() },
-                            modifier =  Modifier.fillMaxHeight(),
-                            shape = RoundedCornerShape(topStart = 25.dp, bottomStart = 25.dp),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = stringResource(R.string.previous)
+                            Text(
+                                text = stringResource(R.string.total_item),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
-                        }
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxHeight()
-                        ) {
-                            if (uiState.tabState == 3) {
-                                Text(
-                                    text = stringResource(R.string.all_shifts),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-                            } else {
-                                Text(
-                                    text = "${uiState.startDate} -",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-                                Text(
-                                    text = "${uiState.endDate.minusDays(1)}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-                            }
-                        }
-                        Button(
-                            onClick = { viewModel.plusDate() },
-                            modifier =  Modifier.fillMaxHeight(),
-                            shape = RoundedCornerShape(topEnd = 25.dp, bottomEnd = 25.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowForward,
-                                contentDescription = stringResource(R.string.next)
+                            Text(
+                                text = total,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
+                    
+                    // Date navigation
+                    Card(
+                        shape = RoundedCornerShape(28.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
+                                .padding(8.dp)
+                        ) {
+                            FilledTonalIconButton(
+                                onClick = { viewModel.minusDate() },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = stringResource(R.string.previous)
+                                )
+                            }
+                            
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            ) {
+                                if (uiState.tabState == 3) {
+                                    Text(
+                                        text = stringResource(R.string.all_shifts),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${uiState.startDate} -",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "${uiState.endDate.minusDays(1)}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            
+                            FilledTonalIconButton(
+                                onClick = { viewModel.plusDate() },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = stringResource(R.string.next)
+                                )
+                            }
+                        }
+                    }
                 }
-                Spacer(Modifier.padding(10.dp))
             }
         }
     ) {
         Column(Modifier.padding(it)) {
-            TabRow(selectedTabIndex = uiState.tabState) {
+            // Animated tab selection
+            val selectedTabIndex = uiState.tabState
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        height = 3.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            ) {
                 titles.forEachIndexed { index, title ->
                     Tab(
-                        selected = uiState.tabState == index,
+                        selected = selectedTabIndex == index,
                         onClick = { viewModel.updateTabState(index) },
-                        text = { Text(text = title) }
+                        text = { 
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                            ) 
+                        }
                     )
                 }
             }
-            Spacer(Modifier.padding(5.dp))
+            
+            Spacer(Modifier.height(16.dp))
             ShiftHeader()
-            Spacer(Modifier.padding(5.dp))
+            
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                items(uiState.itemList) { item ->
-                    ShiftItem(item, navigateToItemUpdate)
+                items(
+                    items = uiState.itemList,
+                    key = { it.id }
+                ) { item ->
+                    // Add animation for items
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = true,
+                        enter = WorkTrackerAnimations.fadeIn + WorkTrackerAnimations.springInFromBottom,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ShiftItem(item, navigateToItemUpdate)
+                    }
                 }
             }
         }
@@ -168,65 +233,112 @@ fun ShiftHeader() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(
             text = stringResource(R.string.date_column),
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(2f)
         )
         Text(
             text = stringResource(R.string.break_column),
             textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
         Text(
             text = stringResource(R.string.time_column),
             textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftItem(
     item: Shift,
     onItemClick: (Int) -> Unit,
 ) {
-    Column {
-        Divider()
-        Spacer(Modifier.padding(vertical = 2.dp))
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        onClick = { onItemClick(item.id) },
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 8.dp
+        )
+    ) {
         Row(
             modifier = Modifier
-                .clickable { onItemClick(item.id) }
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
                 modifier = Modifier
                     .weight(2f)
                     .testTag("${item.id}")
             ) {
                 val date = LocalDate.parse(item.date, DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.US))
-                Text(DateTimeFormatter.ofPattern("EEE, LLL d", Locale.US).format(date))
-                Text(item.shiftSpan)
+                Text(
+                    text = DateTimeFormatter.ofPattern("EEE, LLL d", Locale.US).format(date),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = item.shiftSpan,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Text(
-                text = item.breakTotal,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("break")
-            )
-            Text(
-                text = item.shiftTotal,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("total")
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Break",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = item.breakTotal,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.testTag("break")
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Time",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = item.shiftTotal,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("total")
+                )
+            }
         }
     }
 }
@@ -239,25 +351,38 @@ fun LogTopAppBar(
     navigateBack: () -> Unit = {},
     createShift: () -> Unit = {}
 ) {
-    TopAppBar(
-        title = { Text(title) },
-        modifier = modifier,
+    CenterAlignedTopAppBar(
+        title = { 
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            ) 
+        },
         navigationIcon = {
             IconButton(onClick = navigateBack) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
+                    imageVector = Icons.Filled.ArrowBack, 
+                    contentDescription = stringResource(R.string.back),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         },
         actions = {
-            IconButton(onClick = createShift) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = stringResource(R.string.create_new_shift)
+            FilledIconButton(
+                onClick = createShift,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = "Add")
             }
-        }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        modifier = modifier
     )
 }
 
