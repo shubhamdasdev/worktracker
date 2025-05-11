@@ -13,7 +13,8 @@ object AppViewModelProvider {
         initializer {
             MainViewModel(
                 workTrackerApplication().container.shiftsRepository,
-                workTrackerApplication().container.sharedPreferencesRepository
+                workTrackerApplication().container.sharedPreferencesRepository,
+                workTrackerApplication().container.weatherRepository
             )
         }
         initializer {

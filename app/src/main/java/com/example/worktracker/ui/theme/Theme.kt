@@ -22,17 +22,25 @@ private val DarkColorScheme = darkColorScheme(
     primary = blue2,
     onPrimary = Color.Black,
     secondary = grey2,
+    onSecondary = Color.White,
     tertiary = grey3,
     onTertiary = Color.White,
-    surface = grey2
+    surface = grey2,
+    onSurface = Color.White,
+    background = grey3,
+    onBackground = Color.White
 )
 private val LightColorScheme = lightColorScheme(
     primary = blue1,
+    onPrimary = Color.White,
     secondary = blue4,
+    onSecondary = Color.Black,
     tertiary = blue5,
     onTertiary = Color.Black,
     surface = blue2,
+    onSurface = Color.Black,
     background = blue3,
+    onBackground = Color.Black,
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -50,7 +58,7 @@ val LocalIsDarkMode = compositionLocalOf { false }
 fun WorkTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

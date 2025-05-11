@@ -53,4 +53,15 @@
     <string name="break_column">Break</string>
     <string name="time_column">Time</string>
     <string name="create_new_shift">Create new shift</string>
+    
+    <!-- Weather feature strings -->
+    <string name="weather_settings">Weather</string>
+    <string name="enable_weather">Enable Weather</string>
+    <string name="weather_info">Shows current weather conditions on the clock screen and records weather data with your shifts</string>
+    <string name="weather_temperature">Temperature: %1$s°C</string>
+    <string name="weather_description">Weather: %1$s</string>
+    <string name="weather_location">Location: %1$s</string>
+    <string name="weather_loading">Loading weather data…</string>
+    <string name="weather_error">Unable to load weather data</string>
+    <string name="weather_permission_required">Location permission required for weather</string>
 </resources>

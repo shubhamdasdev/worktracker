@@ -24,6 +24,10 @@ data class ShiftUiState(
     val endTime: String,
     val breakTotal: String = "---",
     val total: String,
+    val weatherTemp: Double? = null,
+    val weatherDescription: String? = null,
+    val weatherLocation: String? = null,
+    val hasWeatherData: Boolean = false
 )
 
 class ShiftViewModel(

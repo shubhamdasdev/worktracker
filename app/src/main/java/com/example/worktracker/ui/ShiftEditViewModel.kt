@@ -175,13 +175,20 @@ class ShiftEditViewModel(
         dateTime = dateTime.plusMinutes(tokens[1].toLong())
         val endDate = DateTimeFormatter.ofPattern("EEE, LLL d", Locale.US).format(dateTime)
 
+        // Check if the shift has weather data
+        val hasWeatherData = shift.weatherTemp != null && shift.weatherDescription != null
+        
         return ShiftUiState(
             startDate = startDate,
             startTime = startTime,
             endDate = endDate,
             endTime = endTime,
             breakTotal = breakTotal,
-            total = total
+            total = total,
+            weatherTemp = shift.weatherTemp,
+            weatherDescription = shift.weatherDescription,
+            weatherLocation = shift.weatherLocation,
+            hasWeatherData = hasWeatherData
         )
     }
 
@@ -190,8 +197,22 @@ class ShiftEditViewModel(
         val shiftSpan = "${uiState.value.startTime} - ${uiState.value.endTime}"//6:21 PM - 6:23 PM
         val breakTotal = getBreakForInsert(uiState.value.breakTotal)//0:00
         val shiftTotal = uiState.value.total//0:00
+        
+        // Preserve weather data if it exists
+        val weatherTemp = uiState.value.weatherTemp
+        val weatherDescription = uiState.value.weatherDescription
+        val weatherLocation = uiState.value.weatherLocation
 
-        val shift = Shift(shiftId, date, shiftSpan, breakTotal, shiftTotal)
+        val shift = Shift(
+            id = shiftId, 
+            date = date, 
+            shiftSpan = shiftSpan, 
+            breakTotal = breakTotal, 
+            shiftTotal = shiftTotal,
+            weatherTemp = weatherTemp,
+            weatherDescription = weatherDescription,
+            weatherLocation = weatherLocation
+        )
         convertShiftToDifferentTimeZone(shift, selectedTimeZone, ZoneId.of("UTC"))
 
         shiftsRepository.updateItem(shift)

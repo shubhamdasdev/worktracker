@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Shift::class], version = 4, exportSchema = false)
+@Database(entities = [Shift::class], version = 5, exportSchema = false)
 abstract class WorkTrackerDatabase : RoomDatabase() {
 
     abstract fun shiftDao(): ShiftDao

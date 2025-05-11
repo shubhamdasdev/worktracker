@@ -238,6 +238,49 @@ fun ShiftEditScreen(
                 )
                 Spacer(modifier = Modifier.weight(weight))
             }
+            
+            // Display weather information if available
+            if (uiState.hasWeatherData) {
+                Spacer(modifier = Modifier.padding(vertical = 8.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Weather Information",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        uiState.weatherTemp?.let {
+                            Text(
+                                text = stringResource(R.string.weather_temperature, it.toString()),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                        
+                        uiState.weatherDescription?.let {
+                            Text(
+                                text = stringResource(R.string.weather_description, it),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                        
+                        uiState.weatherLocation?.let {
+                            Text(
+                                text = stringResource(R.string.weather_location, it),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.padding(vertical = 40.dp))
             val scope = rememberCoroutineScope()
             Button(

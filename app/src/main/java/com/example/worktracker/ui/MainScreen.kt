@@ -151,6 +151,16 @@ fun MainScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Weather widget
+                    if (uiState.weatherEnabled) {
+                        WeatherWidget(
+                            weatherEnabled = uiState.weatherEnabled,
+                            weatherState = viewModel.weatherState,
+                            onRequestPermission = { viewModel.requestWeatherPermission() },
+                            onRefreshWeather = { viewModel.refreshWeather(context) },
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
                     Text(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,

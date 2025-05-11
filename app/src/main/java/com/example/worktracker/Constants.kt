@@ -15,4 +15,10 @@ object Constants {
     const val START_OF_WEEK_KEY = "com.example.worktracker.START_OF_WEEK_KEY"
 
     const val CHECKED_FOR_PERMISSIONS_KEY = "com.example.worktracker.CHECKED_FOR_PERMISSIONS_KEY"
+    
+    // Weather API constants
+    const val WEATHER_ENABLED_KEY = "com.example.worktracker.WEATHER_ENABLED_KEY"
+    const val WEATHER_LOCATION_PERMISSION_KEY = "com.example.worktracker.WEATHER_LOCATION_PERMISSION_KEY"
+    const val WEATHER_LAST_LAT_KEY = "com.example.worktracker.WEATHER_LAST_LAT_KEY"
+    const val WEATHER_LAST_LON_KEY = "com.example.worktracker.WEATHER_LAST_LON_KEY"
 }

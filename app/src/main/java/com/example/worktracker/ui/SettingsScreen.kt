@@ -109,6 +109,14 @@ fun SettingsScreen(
                         viewModel.updateStartOfWeek(startOfWeek)
                     }
                 )
+                
+                // Weather settings
+                WeatherSettings(
+                    weatherEnabled = uiState.weatherEnabled,
+                    onWeatherEnabledChanged = { enabled ->
+                        viewModel.updateWeatherEnabled(enabled)
+                    }
+                )
             }
         }
     )
@@ -552,21 +560,61 @@ fun SettingsItem(
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.clickable(onClick = onClick)
-    ){
-        Column {
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = settingName,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+            text = selectedItem,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+fun WeatherSettings(
+    weatherEnabled: Boolean,
+    onWeatherEnabledChanged: (Boolean) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.weather_settings),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = settingName,
-                modifier = Modifier.padding(top = 8.dp),
-                fontSize = 20.sp
+                text = stringResource(R.string.enable_weather),
+                style = MaterialTheme.typography.bodyLarge
             )
+            Switch(
+                checked = weatherEnabled,
+                onCheckedChange = onWeatherEnabledChanged
+            )
+        }
+        
+        if (weatherEnabled) {
             Text(
-                text = selectedItem,
-                modifier = Modifier.padding(bottom = 8.dp),
-                color = Color.Gray,
-                fontSize = 17.sp
+                text = stringResource(R.string.weather_info),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
             )
-            Divider()
         }
     }
 }
