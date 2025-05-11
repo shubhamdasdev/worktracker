@@ -86,13 +86,23 @@ Added a new weather widget that enhances the work tracking experience:
 ## Screenshots
 
 ### Material 3 UI with Weather Widget
-<img src="media/Screenshot 2025-05-10 at 11.21.18 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.24 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.33 PM.png" style="height: 445px; width:auto;"/>
+
+![Main Screen with Weather Widget](media/mm.png)
+
+![Shift List Screen](media/vv.png)
+
+![Weather Detail Screen](media/mm.png)
 
 ### Shift Management and Time Zone Features
-<img src="media/Screenshot 2025-05-10 at 11.21.39 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.21.54 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 11.22.00 PM.png" style="height: 445px; width:auto;"/>
+
+![Shift Management](media/qq.png)
+
+![Time Zone Selection](media/ee.png)
+
 
 ### Settings with Material 3 Components
-<img src="media/Screenshot 2025-05-10 at 11.22.12 PM.png" style="height: 445px; width:auto;"/> <img src="media/Screenshot 2025-05-10 at 10.51.10 PM.png" style="height: 445px; width:auto;"/>
+
+![Settings Screen](media/ww.png)
 
 ## Technical Architecture
 
