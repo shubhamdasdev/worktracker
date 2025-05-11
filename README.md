@@ -65,18 +65,23 @@ Added a new weather widget that enhances the work tracking experience:
 
 ### Additional Improvements
 
-- **Time Zone Management**:
-  - Comprehensive time zone handling through `TimeZoneInfo`
-  - Support for remote work across different time zones
+- **Time Zone API Integration**:
+  - Integration with WorldTimeAPI (worldtimeapi.org) for accurate global time zone data
+  - Comprehensive time zone handling through `TimeZoneInfo` with caching and fallback mechanisms
+  - Batch processing with rate limit handling for API efficiency
+  - Support for remote work across different time zones with proper UTC offset display
+  - Intelligent time zone selection with alphabetical indexing for quick navigation
 
 - **Notifications**:
   - Enhanced notification system with `NotificationHandler`
   - Scheduled notifications through `NotificationWorker`
   - Boot-aware notifications with `BootReceiver`
+  - Time zone aware notifications for global work scheduling
 
 - **Settings and Preferences**:
   - Improved settings screen with Material 3 components
   - Persistent user preferences through `SharedPreferencesRepository`
+  - Time zone selection interface with search functionality
 
 ## Screenshots
 
@@ -114,6 +119,7 @@ Added a new weather widget that enhances the work tracking experience:
   - Custom interceptors for rate limiting and logging
   - Efficient request/response handling
   - Proper error management
+  - Integration with both WorldTimeAPI and OpenWeatherMap API
 
 ## Future Development
 
